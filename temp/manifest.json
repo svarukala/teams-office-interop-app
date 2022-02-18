@@ -1,0 +1,52 @@
+{
+  "$schema": "https://raw.githubusercontent.com/OfficeDev/microsoft-teams-app-schema/preview/DevPreview/MicrosoftTeams.schema.json",
+  "manifestVersion": "m365DevPreview",
+  "id": "9a847560-8551-11ec-a628-8bb7357a5812",
+  "version": "0.0.1",
+  "packageName": "teamsofficeinteropapp",
+  "developer": {
+    "name": "Contoso",
+    "websiteUrl": "https://sridev.ngrok.io",
+    "privacyUrl": "https://sridev.ngrok.io/privacy.html",
+    "termsOfUseUrl": "https://sridev.ngrok.io/tou.html"
+  },
+  "name": {
+    "short": "teams office interop app",
+    "full": "teams office interop app"
+  },
+  "description": {
+    "short": "TODO: add short description here",
+    "full": "TODO: add full description here"
+  },
+  "icons": {
+    "outline": "icon-outline.png",
+    "color": "icon-color.png"
+  },
+  "accentColor": "#D85028",
+  "configurableTabs": [],
+  "staticTabs": [
+    {
+      "entityId": "fc24f61a-ab71-4eec-8ade-48aff0a9226b",
+      "name": "Interop Home",
+      "contentUrl": "https://sridev.ngrok.io/interopHomeTab/?name={loginHint}&tenant={tid}&theme={theme}",
+      "scopes": [
+        "personal"
+      ]
+    }
+  ],
+  "bots": [],
+  "connectors": [],
+  "composeExtensions": [],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "sridev.ngrok.io"
+  ],
+  "showLoadingIndicator": false,
+  "webApplicationInfo": {
+    "id": "c613e0d1-161d-4ea0-9db4-0f11eeabc2fd",
+    "resource": "api://sridev.ngrok.io/c613e0d1-161d-4ea0-9db4-0f11eeabc2fd"
+  }
+}

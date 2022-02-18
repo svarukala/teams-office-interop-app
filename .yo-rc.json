@@ -1,0 +1,9 @@
+{
+  "generator-teams": {
+    "promptValues": {
+      "developer": "Contoso"
+    },
+    "libraryName": "teamsOfficeInteropApp",
+    "generator-version": "4.0.0-next.2"
+  }
+}
