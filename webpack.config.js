@@ -115,7 +115,7 @@ const config = [{
                 all: false,
                 colors: true,
                 errors: true,
-                warnings: true,
+                warnings: false,
                 timings: true,
                 entrypoints: true
             }
