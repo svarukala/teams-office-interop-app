@@ -28,6 +28,7 @@
     "jwt-decode": "^3.1.2",
     "morgan": "1.9.1",
     "msteams-react-base-component": "^4.0.0-preview5",
+    "office-ui-fabric-react": "^7.183.1",
     "react": "^16.8.6",
     "react-dom": "^16.8.6"
   },
