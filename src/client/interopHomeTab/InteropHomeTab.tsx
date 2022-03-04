@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Provider, Flex, Image, Text, Button, Header, List, ItemLayout } from "@fluentui/react-northstar";
+import { List } from "@fluentui/react-northstar";
+import { ImageFit, Pivot, PivotItem, Image} from 'office-ui-fabric-react';
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTeams } from "msteams-react-base-component";
 import { app, authentication } from "@microsoft/teams-js";
@@ -8,14 +9,37 @@ import {Providers, ProviderState, LoginType} from '@microsoft/mgt-element';
 import * as MicrosoftTeams from "@microsoft/teams-js";
 import {TeamsMsal2Provider, HttpMethod} from '@microsoft/mgt-teams-msal2-provider';
 import { Msal2Provider } from '@microsoft/mgt-msal2-provider';
-import { Login, Person, FileList, Agenda, PersonViewType, PeoplePicker, PersonCardInteraction, MgtTemplateProps, Get } from '@microsoft/mgt-react';
-import { MgtPerson } from '@microsoft/mgt-components';
-import * as MicrosoftGraph from '@microsoft/microsoft-graph-types';
 import App from './App';
+import ReusableApp from "./ReusableApp";
+import * as msal from "@azure/msal-browser";
 /**
  * Implementation of the Interop Home content page
  */
- 
+let currentAccount: msal.AccountInfo = null;
+
+const msalConfig = {  
+    auth: {  
+      clientId: 'c613e0d1-161d-4ea0-9db4-0f11eeabc2fd',
+      authority: "https://login.microsoftonline.com/m365x229910.onmicrosoft.com",
+      redirectUri: 'https://sridev.ngrok.io/interopHomeTab/'
+    },
+    cache: {
+        cacheLocation: "sessionStorage", // This configures where your cache will be stored
+        storeAuthStateInCookie: true, // Set this to "true" if you are having issues on IE11 or Edge
+    }  
+  };
+  
+const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+const tokenrequest: msal.SilentRequest = {
+    scopes: ["https://m365x229910.sharepoint.com/AllSites.Read", "https://m365x229910.sharepoint.com/AllSites.Manage"],
+    account: currentAccount,
+    };
+
+const loginRequest = {
+    scopes: ["https://m365x229910.sharepoint.com/AllSites.Read", "https://m365x229910.sharepoint.com/AllSites.Manage"]
+  };
+
 export const InteropHomeTab = () => {
 
     const [{ inTeams, theme, context }] = useTeams();
@@ -25,7 +49,7 @@ export const InteropHomeTab = () => {
     const [ssoToken, setSsoToken] = useState<string>();
     const [msGraphOboToken, setMsGraphOboToken] = useState<string>();
     const [spoOboToken, setSPOOboToken] = useState<string>();
-    const [recentMail, setRecentMail] = useState<any[]>();
+    const [searchResults, setSearchResults] = useState<any[]>();
 
     useEffect(() => {
         if (inTeams === true) {
@@ -62,6 +86,47 @@ export const InteropHomeTab = () => {
               redirectUri: 'https://sridev.ngrok.io/interopHomeTab/',
               loginType: LoginType.Popup
               });
+            
+            
+            if( msalInstance.getAllAccounts().length > 0 ) {
+                tokenrequest.account = msalInstance.getAllAccounts()[0];
+            }
+            msalInstance.acquireTokenSilent(tokenrequest).then((val) => {  
+              let headers = new Headers();  
+              let bearer = "Bearer " + val.accessToken;  
+              console.info("BEARER TOKEN: "+ val.accessToken);
+              console.info("ID TOKEN: "+ val.idToken);
+              setSsoToken(val.idToken);
+              }).catch((errorinternal) => {  
+                  console.log("Internal error: "+ errorinternal); 
+                  /*
+                  msalInstance.loginRedirect(loginRequest).catch(e => {
+                    console.log("Login error: "+ e);
+                });*/
+                msalInstance.loginPopup(loginRequest).catch(e => {
+                  console.log(e);
+                });
+              });
+            
+            /*
+            msalInstance.loginPopup(loginRequest).then(resp =>{
+              if (resp !== null) {
+                tokenrequest.account = resp.account;
+                msalInstance.acquireTokenSilent(tokenrequest).then((val) => {  
+                  let headers = new Headers();  
+                  let bearer = "Bearer " + val.accessToken;  
+                  console.info("BEARER TOKEN: "+ val.accessToken);
+                  console.info("ID TOKEN: "+ val.idToken);
+                  }).catch((errorinternal) => {  
+                      console.log(errorinternal);  
+                    });
+              } 
+              else{
+                console.info("No account");
+              }
+            }).catch(function (error) {
+                console.log("MSAL Login Failure: "+ error);
+            }); */
         }
     }, [inTeams]);
 
@@ -71,6 +136,61 @@ export const InteropHomeTab = () => {
         }
     }, [context]);
 
+
+    /*
+    const getSPOAccessTokenOBO = async () => {
+      const response = await fetch(`https://azfun.ngrok.io/api/TeamsOBOHelper?ssoToken=${ssoToken}&tokenFor=spo`);
+      const responsePayload = await response.json();
+      if (response.ok) {
+        setSPOOboToken(responsePayload.access_token);
+      } else {
+        if (responsePayload!.error === "consent_required") {
+          setError("consent_required");
+        } else {
+          setError("unknown SSO error");
+        }
+      }
+    };
+
+    useEffect(() => {
+      // if the SSO token is defined...
+      if (ssoToken && ssoToken.length > 0) {
+        getSPOAccessTokenOBO();
+      }
+    }, [ssoToken]);      
+
+  useEffect(() => {
+    getSPOSearchResutls();
+    }, [spoOboToken]);
+
+    const getSPOSearchResutls = async () => {
+      if (!spoOboToken) { return; }
+    
+      const endpoint = `https://m365x229910.sharepoint.com/_api/search/query?querytext=%27*%27&selectproperties=%27Author,Path,Title,Url%27&rowlimit=10`;
+      const requestObject = {
+        method: 'GET',
+        headers: {
+          "authorization": "bearer " + spoOboToken,
+          "accept": "application/json; odata=nometadata"
+        }
+      };
+    
+      const response = await fetch(endpoint, requestObject);
+      const responsePayload = await response.json();
+    
+      console.log(responsePayload.value);
+      if (response.ok) {
+          const resultSet = responsePayload.PrimaryQueryResult.RelevantResults.Table.Rows.map((result: any) => ({
+            key:result.Cells[8].Value,
+            //header:result.Cells[0].Value,
+            headerMedia:result.Cells[2].Value,
+            content:result.Cells[1].Value,
+          }));        
+      console.log(JSON.stringify(resultSet));
+      setSearchResults(resultSet);
+    }
+  }
+  */
     //Commenting this out to test MGT
     /*
     const MyMessage = (props: MgtTemplateProps) => {
@@ -191,12 +311,34 @@ export const InteropHomeTab = () => {
       }, [msGraphOboToken]);
      */
 
-
     /**
      * The render() method to create the UI of the tab
      */
-    return (
+    /*
+    return (        
+      <Pivot>        
+        <PivotItem headerText="Sites Search Using SPO REST API">
+        <div>
+          {searchResults && <List items={searchResults} />}
+        </div>
+        </PivotItem>
+        <PivotItem headerText="App">
         <App />
+        </PivotItem>
+    </Pivot>
+    );*/
+
+    return (        
+      <Pivot>        
+        <PivotItem headerText="Sites Search Using SPO REST API">
+        <div>
+          {ssoToken && <ReusableApp idToken={ssoToken} />}
+        </div>
+        </PivotItem>
+        <PivotItem headerText="App">
+        <App />
+        </PivotItem>
+    </Pivot>
     );
 };
 

@@ -1,11 +1,10 @@
 import { Agenda, Login, FileList, Get, MgtTemplateProps, PeoplePicker, Person, ViewType} from '@microsoft/mgt-react';
-import { Grid, Card, CardHeader, CardBody, Flex, Text, Button, Header, Avatar, ItemLayout } from "@fluentui/react-northstar";
 import * as MicrosoftGraph from '@microsoft/microsoft-graph-types';
 import * as React from "react";
 import { useState, useEffect } from 'react';
 import { ImageFit, Pivot, PivotItem, Image } from 'office-ui-fabric-react';
 import { Providers, ProviderState } from '@microsoft/mgt-element';
-
+import SPOSearch from './SPOSearch';
 
 function useIsSignedIn(): [boolean] {
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -51,10 +50,15 @@ function App() {
               <FileList driveId="b!mKw3q1anF0C5DyDiqHKMr8iJr_oIRjlGl4854HhHtho07AdbOeaLT5rMH83yt89B" 
             itemPath="/" enableFileUpload></FileList>
                 </PivotItem>
-                <PivotItem headerText="Sites Search">
-                <Get resource="/sites?search=contoso" scopes={['Sites.Read.All']} maxPages={2}>
-                      <SiteResult template="value" />
-              </Get>
+                <PivotItem headerText="Sites Search Using MSGraph">
+                    <Get resource="/sites?search=contoso" scopes={['Sites.Read.All']} maxPages={2}>
+                            <SiteResult template="value" />
+                    </Get>
+                </PivotItem>
+
+                <PivotItem headerText="Sites Search Using SPO REST API">
+                    {/*<SPOSample title="Hello world" subtitle="Welcome!" useremail={userEmail} ></SPOSample>*/}
+                    <SPOSearch useremail="MeganB@M365x229910.OnMicrosoft.com"></SPOSearch>
                 </PivotItem>
             </Pivot>
         }
