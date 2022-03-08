@@ -12,6 +12,11 @@ import { Msal2Provider } from '@microsoft/mgt-msal2-provider';
 import App from './App';
 import ReusableApp from "./ReusableApp";
 import * as msal from "@azure/msal-browser";
+import { Agenda, Login, FileList, Get, MgtTemplateProps, PeoplePicker, Person, ViewType} from '@microsoft/mgt-react';
+import * as MicrosoftGraph from '@microsoft/microsoft-graph-types';
+import SPOReusable from "./SPOReusable";
+import MSGReusable from "./MSGReusable";
+import ShowAdaptiveCard from "./ShowAdaptiveCard";
 /**
  * Implementation of the Interop Home content page
  */
@@ -87,26 +92,29 @@ export const InteropHomeTab = () => {
               loginType: LoginType.Popup
               });
             
-            
-            if( msalInstance.getAllAccounts().length > 0 ) {
-                tokenrequest.account = msalInstance.getAllAccounts()[0];
-            }
-            msalInstance.acquireTokenSilent(tokenrequest).then((val) => {  
-              let headers = new Headers();  
-              let bearer = "Bearer " + val.accessToken;  
-              console.info("BEARER TOKEN: "+ val.accessToken);
-              console.info("ID TOKEN: "+ val.idToken);
-              setSsoToken(val.idToken);
-              }).catch((errorinternal) => {  
-                  console.log("Internal error: "+ errorinternal); 
-                  /*
-                  msalInstance.loginRedirect(loginRequest).catch(e => {
-                    console.log("Login error: "+ e);
-                });*/
-                msalInstance.loginPopup(loginRequest).catch(e => {
-                  console.log(e);
+            if(ssoToken){}
+            else{
+
+              if( msalInstance.getAllAccounts().length > 0 ) {
+                  tokenrequest.account = msalInstance.getAllAccounts()[0];
+              }
+              msalInstance.acquireTokenSilent(tokenrequest).then((val) => {  
+                let headers = new Headers();  
+                let bearer = "Bearer " + val.accessToken;  
+                console.info("BEARER TOKEN: "+ val.accessToken);
+                console.info("ID TOKEN: "+ val.idToken);
+                setSsoToken(val.idToken);
+                }).catch((errorinternal) => {  
+                    console.info("Internal error: "+ errorinternal); 
+                    /*
+                    msalInstance.loginRedirect(loginRequest).catch(e => {
+                      console.log("Login error: "+ e);
+                  });*/
+                  msalInstance.loginPopup(loginRequest).catch(e => {
+                    console.info(e);
+                  });
                 });
-              });
+            }
             
             /*
             msalInstance.loginPopup(loginRequest).then(resp =>{
@@ -136,7 +144,16 @@ export const InteropHomeTab = () => {
         }
     }, [context]);
 
-
+    const SiteResult = (props: MgtTemplateProps) => {
+      const site = props.dataContext as MicrosoftGraph.Site;
+  
+      return (
+          <div>
+              <h1>{site.name}</h1>
+              {site.webUrl}
+        </div>
+        );
+      };
     /*
     const getSPOAccessTokenOBO = async () => {
       const response = await fetch(`https://azfun.ngrok.io/api/TeamsOBOHelper?ssoToken=${ssoToken}&tokenFor=spo`);
@@ -327,6 +344,45 @@ export const InteropHomeTab = () => {
         </PivotItem>
     </Pivot>
     );*/
+
+    return (
+      <div>
+          {
+            ssoToken &&
+            <Pivot aria-label="Basic Pivot Example">
+                <PivotItem headerText="SPO REST API">
+                    <SPOReusable idToken={ssoToken} />
+                </PivotItem>
+                <PivotItem headerText="MS Graph REST API">
+                    <MSGReusable idToken={ssoToken} />
+                </PivotItem>
+                <PivotItem headerText="MS Graph Toolkit">
+                    <Pivot>
+                        <PivotItem headerText="Files">
+                            <FileList></FileList> 
+                        </PivotItem>
+                        <PivotItem headerText="People">
+                            <br/>
+                            <PeoplePicker></PeoplePicker>
+                        </PivotItem>
+                        <PivotItem headerText="File Upload">
+                            <FileList driveId="b!mKw3q1anF0C5DyDiqHKMr8iJr_oIRjlGl4854HhHtho07AdbOeaLT5rMH83yt89B" 
+                        itemPath="/" enableFileUpload></FileList>
+                        </PivotItem>
+                        <PivotItem headerText="Sites Search Using MSGraph">
+                            <Get resource="/sites?search=contoso" scopes={['Sites.Read.All']} maxPages={2}>
+                                    <SiteResult template="value" />
+                            </Get>
+                        </PivotItem>
+                    </Pivot>
+                </PivotItem>           
+                <PivotItem headerText="Adaptive Card">
+                    <ShowAdaptiveCard />
+                </PivotItem>        
+            </Pivot>
+          }
+      </div>
+    );
 
     return (        
       <Pivot>        
